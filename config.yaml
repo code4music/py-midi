@@ -1,0 +1,62 @@
+debug: false
+
+audio:
+  driver: pulseaudio           # alsa | jack
+  # device: "default"      # ex "hw:1" para sua interface USB
+
+  fluidsynth:
+    audio.period-size: 64
+    audio.periods: 2
+    synth.sample-rate: 44100.0
+    synth.cpu-cores: 2
+
+midi:
+  input_port: auto          # porta MIDI (rtmidi index) ou "auto"
+
+instruments:
+  - name: "Piano"
+    file: "sounds/pianos/nord-stage-4.sf2"
+    channel: 0
+    bank: 0
+    preset: 3
+    volume_cc: 56
+    initial_volume: 127
+
+  - name: "Pad"
+    file: "sounds/pads/analog.sf2"
+    channel: 1
+    bank: 0
+    preset: 0
+    volume_cc: 57
+    initial_volume: 0
+
+  - name: "Electric"
+    file: "sounds/electric-pianos/nord.sf2"
+    channel: 2
+    bank: 0
+    preset: 1
+    volume_cc: 58
+    initial_volume: 0
+
+  - name: "Organ"
+    file: "sounds/organ/virtual.sf2"
+    channel: 3
+    bank: 100
+    preset: 40
+    volume_cc: 59
+    initial_volume: 0
+
+  - name: "Organ 2"
+    file: "sounds/organ/organs.sf2"
+    channel: 4
+    bank: 2
+    preset: 17
+    volume_cc: 60
+    initial_volume: 0
+
+presets_dir: "sounds"
+reload_on_change: true   # se true, monitora config.yaml e recarrega
+http:
+  enabled: true
+  host: "0.0.0.0"
+  port: 5000

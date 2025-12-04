@@ -1,0 +1,4 @@
+.venv/
+sounds/*
+!/sounds/.gitkeep
+app/__pycache__/

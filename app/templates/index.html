@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Synth Control Panel</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body class="bg-light">
+  <div class="container py-4">
+    <h1 class="mb-4 text-center">🎹 Painel do Synth</h1>
+
+    <div class="row g-4">
+      {% for name, inst in instruments.items() %}
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">{{ name }}</h5>
+
+            <p class="card-text">
+              <b>Arquivo:</b> {{ inst.file }}<br>
+              <b>Canal:</b> {{ inst.channel }}<br>
+              <b>Banco:</b> {{ inst.bank }}<br>
+              <b>Preset atual:</b> <span id="preset-name-{{ name }}">{{ inst.preset_name }}</span>
+            </p>
+
+            <label class="form-label">Volume</label>
+            <input type="range" min="0" max="127" value="100" class="form-range" onchange="setVolume('{{ name }}', this.value)" >
+
+            <button class="btn btn-primary btn-sm mt-3 w-100" onclick="openPresetModal('{{ name }}')" >
+              Selecionar preset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="presetModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title">Selecionar preset</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <p><b>Instrumento:</b> <span id="presetInstrument"></span></p>
+
+          <label class="form-label">Preset</label>
+          <select class="form-select" id="presetList"></select>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" onclick="applyPreset()">Aplicar</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentInstrument = null;
+
+    function openPresetModal(name) {
+      currentInstrument = name;
+
+      // Atualiza o nome do instrumento no modal
+      document.getElementById("presetInstrument").textContent = name;
+
+      const currentPresetSpan = document.getElementById(`preset-name-${name}`);
+      const currentPreset = currentPresetSpan ? currentPresetSpan.textContent.trim() : null;
+
+      fetch(`/presets/${encodeURIComponent(name)}`)
+        .then(response => response.json())
+        .then(presets => {
+          const select = document.getElementById("presetList");
+          select.innerHTML = "";
+
+          presets.forEach(preset => {
+            const option = document.createElement("option");
+            option.value = preset.preset;
+            option.textContent = `${preset.preset} — ${preset.name}`;
+
+            // Se o preset atual for igual ao preset do loop → seleciona
+            if (currentPreset && preset.name === currentPreset) {
+              option.selected = true;
+            }
+
+            select.appendChild(option);
+          });
+
+          const modalElement = document.getElementById("presetModal");
+          const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+          modal.show();
+        });
+    }
+
+
+    function applyPreset() {
+      const preset = document.getElementById("presetList").value;
+
+      fetch('/set_preset', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          instrument: currentInstrument,
+          preset: parseInt(preset, 10),
+        })
+      })
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById("preset-name-" + currentInstrument).textContent = data.preset_name;
+      });
+
+      bootstrap.Modal.getInstance(document.getElementById('presetModal')).hide();
+    }
+
+    function setVolume(name, value) {
+      fetch('/set_volume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, value: value })
+      });
+    }
+  </script>
+</body>
+</html>
