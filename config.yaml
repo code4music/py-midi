@@ -1,7 +1,7 @@
 debug: true
 auto_reload: false
 presets_dir: "sounds"
-midi_learn_mode: true  # Ativa modo de descoberta de controles MIDI
+midi_learn_mode: true
 
 audio:
   driver: "alsa" # alsa | jack | pulseaudio
@@ -40,6 +40,7 @@ banks:
         preset: 3
         volume_cc: 1
         initial_volume: 127
+        use_sustain: true
         min_note: "C0"
         max_note: "C8"
 
@@ -50,6 +51,7 @@ banks:
         preset: 0
         volume_cc: 2
         initial_volume: 0
+        use_sustain: true
         min_note: "C2"
         max_note: "B4"
 
@@ -60,6 +62,7 @@ banks:
         preset: 1
         volume_cc: 3
         initial_volume: 0
+        use_sustain: true
         min_note: "C0"
         max_note: "C8"
 
@@ -73,6 +76,7 @@ banks:
         preset: 3
         volume_cc: 1
         initial_volume: 127
+        use_sustain: true
         min_note: "C0"
         max_note: "C8"
 
@@ -83,6 +87,7 @@ banks:
         preset: 40
         volume_cc: 2
         initial_volume: 0
+        use_sustain: false
         min_note: "C1"
         max_note: "C7"
 
@@ -93,6 +98,7 @@ banks:
         preset: 17
         volume_cc: 3
         initial_volume: 0
+        use_sustain: false
         min_note: "C0"
         max_note: "C8"
 
@@ -106,6 +112,7 @@ banks:
         preset: 0
         volume_cc: 1
         initial_volume: 127
+        use_sustain: true
         min_note: "C2"
         max_note: "B5"
 
@@ -116,6 +123,7 @@ banks:
         preset: 1
         volume_cc: 0
         initial_volume: 2
+        use_sustain: true
         min_note: "C0"
         max_note: "C8"
 

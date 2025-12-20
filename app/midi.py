@@ -85,8 +85,17 @@ class MidiBridge:
                         self.synth.instruments[mapped]['volume'] = value
                         log(f"[midi] Volume do instrumento '{mapped}' (canal {ch}) ajustado para {value}")
                     elif mapped == 'sustain':
-                        self.synth.send_cc(channel, 64, value)
-                        log(f"[midi] Sustain (canal {channel}) = {value}")
+                        # Envia sustain para todos os instrumentos que têm use_sustain: true
+                        count = 0
+                        for name, inst in self.synth.instruments.items():
+                            if inst.get('use_sustain', False):
+                                ch = inst['channel']
+                                self.synth.send_cc(ch, 64, value)
+                                count += 1
+                        if count > 0:
+                            log(f"[midi] 🎹 Sustain = {value} ({count} instrumentos)")
+                        else:
+                            log(f"[midi] ⚠️ Sustain recebido mas nenhum instrumento configurado com use_sustain: true")
                     else:
                         self.synth.send_cc(channel, ccnum, value)
                         log(f"[midi] CC passthrough: canal {channel}, CC#{ccnum} = {value}")
