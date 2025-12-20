@@ -14,7 +14,7 @@ def reload_configs(cfg, synth, midi):
         synth.reload(cfg.data)
         midi.cc_map = cfg.midi_map.get('cc', {})
         midi.actions = cfg.midi_map.get('actions', {})
-        log('[reload] configs reloaded')
+        log('[reload] configs reloaded from config.yaml')
     except Exception as e:
         log(f'[reload] error: {e}')
 

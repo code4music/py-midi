@@ -10,6 +10,8 @@ class MidiBridge:
         self.midi_ports = []
         self.cc_map = cfg.midi_map.get('cc', {})
         self.actions = cfg.midi_map.get('actions', {})
+        self.midi_learn_mode = cfg.data.get('midi_learn_mode', False)
+        self.cc_seen = {}  # Rastreia quais CCs foram vistos
         self.open_all_ports()
 
     def open_all_ports(self):
@@ -48,22 +50,49 @@ class MidiBridge:
             self.synth.note_off(channel, data[1])
         elif status == 0xB0:
             ccnum, value = data[1], data[2]
-            mapped = self.cc_map.get(str(ccnum)) or self.cc_map.get(ccnum)
-            if mapped:
-                if isinstance(mapped, str) and mapped in self.synth.instruments:
-                    ch = self.synth.instruments[mapped]['channel']
-                    self.synth.send_cc(ch, 7, value)
-                    self.synth.instruments[mapped]['volume'] = value
-                elif mapped == 'sustain':
-                    self.synth.send_cc(channel, 64, value)
-                else:
-                    self.synth.send_cc(channel, ccnum, value)
+            
+            # Modo de descoberta MIDI - destaca novos controles
+            if self.midi_learn_mode:
+                if ccnum not in self.cc_seen:
+                    log(f"[midi] 🎛️  NOVO CONTROLE DETECTADO! CC#{ccnum}")
+                    log(f"[midi] 📝 Adicione no config.yaml como volume_cc do instrumento")
+                    self.cc_seen[ccnum] = True
+                log(f"[midi] 🎚️  CC#{ccnum} = {value} (Canal {channel})")
             else:
-                for name, inst in self.synth.instruments.items():
-                    if inst.get('volume_cc') == ccnum:
-                        ch = inst['channel']
+                log(f"[midi] CC recebido - Canal: {channel}, CC#: {ccnum}, Valor: {value}")
+            
+            # Prioridade 1: Verificar se algum instrumento usa este CC para volume
+            volume_handled = False
+            for name, inst in self.synth.instruments.items():
+                if inst.get('volume_cc') == ccnum:
+                    ch = inst['channel']
+                    self.synth.send_cc(ch, 7, value)
+                    inst['volume'] = value
+                    log(f"[midi] 🎚️  Volume '{name}' (canal {ch}) = {value}")
+                    volume_handled = True
+                    break
+            
+            if volume_handled:
+                pass  # Já processado
+            else:
+                # Prioridade 2: Verificar mapeamento especial no cc_map
+                mapped = self.cc_map.get(str(ccnum)) or self.cc_map.get(ccnum)
+                if mapped:
+                    log(f"[midi] CC#{ccnum} mapeado para: {mapped}")
+                    if isinstance(mapped, str) and mapped in self.synth.instruments:
+                        ch = self.synth.instruments[mapped]['channel']
                         self.synth.send_cc(ch, 7, value)
-                        inst['volume'] = value
+                        self.synth.instruments[mapped]['volume'] = value
+                        log(f"[midi] Volume do instrumento '{mapped}' (canal {ch}) ajustado para {value}")
+                    elif mapped == 'sustain':
+                        self.synth.send_cc(channel, 64, value)
+                        log(f"[midi] Sustain (canal {channel}) = {value}")
+                    else:
+                        self.synth.send_cc(channel, ccnum, value)
+                        log(f"[midi] CC passthrough: canal {channel}, CC#{ccnum} = {value}")
+                else:
+                    log(f"[midi] ⚠️ CC#{ccnum} não mapeado")
+                    log(f"[midi] 💡 Configure volume_cc: {ccnum} no instrumento desejado")
         elif status == 0xC0:
             self.synth.fs.program_change(channel, data[1])
 
