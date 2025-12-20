@@ -13,6 +13,7 @@ def create_app(synth):
                 "bank": inst.get("bank", 0),
                 "preset": inst.get("preset", 0),
                 "preset_name": inst.get("preset_name", "None"),
+                "volume": inst.get("volume", 100),
             }
             for name, inst in synth.instruments.items()
         }

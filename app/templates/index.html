@@ -50,11 +50,15 @@
             <h5 class="card-title">{{ name }}</h5>
             <div class="mb-3">
               <h6 class="text-primary mb-1" id="preset-name-{{ name }}">{{ inst.preset_name }}</h6>
-              <small class="text-muted">Canal {{ inst.channel }} • Banco {{ inst.bank }}</small>
+              <small class="text-muted">Canal {{ inst.channel }}</small>
             </div>
-            <label class="form-label">Volume</label>
-            <input type="range" min="0" max="127" value="100" class="form-range" onchange="setVolume('{{ name }}', this.value)" >
-            <button class="btn btn-primary btn-sm mt-3 w-100" onclick="openPresetModal('{{ name }}')" >
+            <div class="mb-2">
+              <label class="form-label mb-1 float-end"><span class="badge rounded-pill {% if inst.volume == 0 %}bg-secondary{% else %}bg-primary{% endif %}" id="volume-display-{{ name }}">{{ inst.volume }}</span></label>
+              <input type="range" min="0" max="127" value="{{ inst.volume }}" class="form-range" id="volume-{{ name }}"
+                     oninput="updateVolumeDisplay('{{ name }}', this.value)"
+                     onchange="setVolume('{{ name }}', this.value)">
+            </div>
+            <button class="btn btn-primary btn-sm mt-2 w-100" onclick="openPresetModal('{{ name }}')" >
               Selecionar outro
             </button>
             <div class="mt-3 pt-2 border-top">
@@ -169,13 +173,18 @@
               <!-- Preset em destaque -->
               <div class="mb-3">
                 <h6 class="text-primary mb-1" id="preset-name-${name}">${inst.preset_name}</h6>
-                <small class="text-muted">Canal ${inst.channel} • Volume ${inst.volume}</small>
+                <small class="text-muted">Canal ${inst.channel}</small>
               </div>
 
-              <label class="form-label">Volume</label>
-              <input type="range" min="0" max="127" value="${inst.volume}" class="form-range" onchange="setVolume('${name}', this.value)">
+              <div class="mb-2">
+                <label class="form-label mb-1 float-end"><span class="badge rounded-pill ${inst.volume == 0 ? 'bg-secondary' : 'bg-primary'}" id="volume-display-${name}">${inst.volume}</span></label>
+                <input type="range" min="0" max="127" value="${inst.volume}" class="form-range" 
+                       id="volume-${name}"
+                       oninput="updateVolumeDisplay('${name}', this.value)"
+                       onchange="setVolume('${name}', this.value)">
+              </div>
               
-              <button class="btn btn-primary btn-sm mt-3 w-100" onclick="openPresetModal('${name}')">
+              <button class="btn btn-primary btn-sm mt-2 w-100" onclick="openPresetModal('${name}')">
                 Selecionar outro
               </button>
               
@@ -273,6 +282,18 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name, value: value })
       });
+    }
+
+    function updateVolumeDisplay(name, value) {
+      const badge = document.getElementById(`volume-display-${name}`);
+      badge.textContent = value;
+      
+      // Muda cor do badge: cinza quando 0, azul quando > 0
+      if (parseInt(value) === 0) {
+        badge.className = 'badge rounded-pill bg-secondary';
+      } else {
+        badge.className = 'badge rounded-pill bg-primary';
+      }
     }
   </script>
 </body>
