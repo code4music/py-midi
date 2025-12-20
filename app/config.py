@@ -59,3 +59,41 @@ class Config:
             self.data['active_bank'] = bank_name
             return True
         return False
+
+    def next_bank(self):
+        """Avança para o próximo banco (cíclico)"""
+        banks = self.data.get('banks', [])
+        if not banks:
+            return None
+        
+        active = self.get_active_bank()
+        bank_names = [b.get('name') for b in banks]
+        
+        try:
+            current_idx = bank_names.index(active)
+            next_idx = (current_idx + 1) % len(bank_names)
+        except ValueError:
+            next_idx = 0
+        
+        next_bank_name = bank_names[next_idx]
+        self.switch_bank(next_bank_name)
+        return next_bank_name
+
+    def prev_bank(self):
+        """Volta para o banco anterior (cíclico)"""
+        banks = self.data.get('banks', [])
+        if not banks:
+            return None
+        
+        active = self.get_active_bank()
+        bank_names = [b.get('name') for b in banks]
+        
+        try:
+            current_idx = bank_names.index(active)
+            prev_idx = (current_idx - 1) % len(bank_names)
+        except ValueError:
+            prev_idx = 0
+        
+        prev_bank_name = bank_names[prev_idx]
+        self.switch_bank(prev_bank_name)
+        return prev_bank_name

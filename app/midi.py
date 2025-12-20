@@ -14,6 +14,37 @@ class MidiBridge:
         self.cc_seen = {}  # Rastreia quais CCs foram vistos
         self.open_all_ports()
 
+    def _check_actions(self, ccnum, value):
+        """Verifica e executa ações MIDI configuradas (botões)"""
+        for action_name, action_cfg in self.actions.items():
+            if isinstance(action_cfg, dict):
+                if action_cfg.get('cc') == ccnum:
+                    # Verifica se há um valor específico requerido
+                    required_value = action_cfg.get('value')
+                    if required_value is not None and value != required_value:
+                        continue
+                    
+                    # Executar ação
+                    if action_name == 'next_bank':
+                        bank = self.synth.next_bank()
+                        if bank:
+                            log(f"[midi] ⏭️  Avançar banco -> {bank}")
+                        return True
+                    elif action_name == 'prev_bank':
+                        bank = self.synth.prev_bank()
+                        if bank:
+                            log(f"[midi] ⏮️  Voltar banco -> {bank}")
+                        return True
+                    elif action_name == 'panic':
+                        self.synth.panic()
+                        log(f"[midi] 🚨 PANIC! Todos os sons parados")
+                        return True
+                    elif action_name == 'reload_config':
+                        log(f"[midi] 🔄 Recarregando configuração...")
+                        # Esta ação já deve ser tratada no main.py
+                        return True
+        return False
+
     def open_all_ports(self):
         tmp = rtmidi.MidiIn()
         ports = tmp.get_ports()
@@ -50,6 +81,11 @@ class MidiBridge:
             self.synth.note_off(channel, data[1])
         elif status == 0xB0:
             ccnum, value = data[1], data[2]
+            
+            # Verificar ações antes de processar como CC normal
+            action_triggered = self._check_actions(ccnum, value)
+            if action_triggered:
+                return
             
             # Modo de descoberta MIDI - destaca novos controles
             if self.midi_learn_mode:

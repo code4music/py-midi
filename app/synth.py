@@ -167,6 +167,24 @@ class SynthModule:
             log(f'[synth] bank not found: {bank_name}')
             return False
 
+    def next_bank(self):
+        """Avança para o próximo banco"""
+        bank_name = self.cfg.next_bank()
+        if bank_name:
+            log(f'[synth] 🎹 Próximo banco: {bank_name}')
+            self._activate_bank_instruments(self.cfg.get_active_instruments())
+            return bank_name
+        return None
+
+    def prev_bank(self):
+        """Volta para o banco anterior"""
+        bank_name = self.cfg.prev_bank()
+        if bank_name:
+            log(f'[synth] 🎹 Banco anterior: {bank_name}')
+            self._activate_bank_instruments(self.cfg.get_active_instruments())
+            return bank_name
+        return None
+
     def load_instruments(self, instruments):
         """Legacy method - redireciona para _activate_bank_instruments"""
         self._activate_bank_instruments(instruments)

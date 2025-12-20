@@ -23,9 +23,21 @@ midi:
     11: "expression"
 
   actions:
-    reload_config: 
-      cc: 120
-      value: 127      # Receber CC120=127 => recarrega config
+    reload_config:
+      cc: 114
+      value: 127
+    
+    next_bank:
+      cc: 112
+      value: 127
+    
+    prev_bank:
+      cc: 111
+      value: 127
+
+    panic:
+      cc: 118
+      value: 127
 
 active_bank: "Live"
 
