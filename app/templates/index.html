@@ -10,32 +10,51 @@
 
 <body class="bg-light">
   <div class="container py-4">
-    <h1 class="mb-4 text-center">🎹 Painel do Synth</h1>
+    <!-- Select Bank -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-3">
+            <label class="form-label mb-0"><strong>Banco:</strong></label>
+          </div>
+          <div class="col-md-6">
+            <select class="form-select" id="bankSelect" onchange="switchBank()">
+              {% for bank in banks %}
+              <option value="{{ bank.name }}" {% if bank.name == active_bank %}selected{% endif %}>
+                {{ bank.name }} - {{ bank.description }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <span class="badge bg-primary" id="bankBadge">{{ active_bank }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <div class="row g-4">
+    <!-- Instruments Grid -->
+    <div class="row g-4" id="instrumentsGrid">
       {% for name, inst in instruments.items() %}
       <div class="col-12 col-md-6 col-lg-4">
         <div class="card shadow-sm h-100">
           <div class="card-body">
             <h5 class="card-title">{{ name }}</h5>
-
-            <p class="card-text">
-              <b>Arquivo:</b> {{ inst.file }}<br>
-              <b>Canal:</b> {{ inst.channel }}<br>
-              <b>Banco:</b> {{ inst.bank }}<br>
-              <b>Preset atual:</b> <span id="preset-name-{{ name }}">{{ inst.preset_name }}</span>
-            </p>
-
+            <div class="mb-3">
+              <h6 class="text-primary mb-1" id="preset-name-{{ name }}">{{ inst.preset_name }}</h6>
+              <small class="text-muted">Canal {{ inst.channel }} • Banco {{ inst.bank }}</small>
+            </div>
             <label class="form-label">Volume</label>
             <input type="range" min="0" max="127" value="100" class="form-range" onchange="setVolume('{{ name }}', this.value)" >
-
             <button class="btn btn-primary btn-sm mt-3 w-100" onclick="openPresetModal('{{ name }}')" >
-              Selecionar preset
+              Selecionar outro
             </button>
+            <div class="mt-3 pt-2 border-top">
+              <small class="text-muted d-block text-truncate" title="{{ inst.file }}">📁 {{ inst.file }}</small>
+            </div>
           </div>
         </div>
       </div>
-
       {% endfor %}
     </div>
   </div>
@@ -44,24 +63,19 @@
   <div class="modal fade" id="presetModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
-
         <div class="modal-header">
           <h5 class="modal-title">Selecionar preset</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-
         <div class="modal-body">
           <p><b>Instrumento:</b> <span id="presetInstrument"></span></p>
-
           <label class="form-label">Preset</label>
           <select class="form-select" id="presetList"></select>
         </div>
-
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
           <button class="btn btn-primary" onclick="applyPreset()">Aplicar</button>
         </div>
-
       </div>
     </div>
   </div>
@@ -69,10 +83,84 @@
   <script>
     let currentInstrument = null;
 
+    function switchBank() {
+      const bankName = document.getElementById('bankSelect').value;
+      const badge = document.getElementById('bankBadge');
+
+      fetch('/switch_bank', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ bank: bankName })
+      })
+      .then(r => {
+        if (!r.ok) throw new Error('Erro HTTP: ' + r.status);
+        return r.json();
+      })
+      .then(data => {
+        if (data.ok) {
+          badge.textContent = bankName;
+          badge.className = 'badge bg-success';
+
+          updateInstrumentsGrid(data.instruments);
+
+          setTimeout(() => {
+            badge.className = 'badge bg-primary';
+          }, 1000);
+        } else {
+          badge.textContent = 'Erro!';
+          badge.className = 'badge bg-danger';
+          alert('Erro ao trocar banco: ' + (data.error || 'desconhecido'));
+        }
+      })
+      .catch(err => {
+        badge.textContent = 'Erro!';
+        badge.className = 'badge bg-danger';
+        console.error('Erro:', err);
+        alert('Erro na requisição: ' + err.message);
+      });
+    }
+
+    function updateInstrumentsGrid(instruments) {
+      const grid = document.getElementById('instrumentsGrid');
+      grid.innerHTML = '';
+      
+      for (const [name, inst] of Object.entries(instruments)) {
+        const col = document.createElement('div');
+        col.className = 'col-12 col-md-6 col-lg-4';
+        
+        col.innerHTML = `
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h5 class="card-title">${name}</h5>
+              
+              <!-- Preset em destaque -->
+              <div class="mb-3">
+                <h6 class="text-primary mb-1" id="preset-name-${name}">${inst.preset_name}</h6>
+                <small class="text-muted">Canal ${inst.channel} • Volume ${inst.volume}</small>
+              </div>
+
+              <label class="form-label">Volume</label>
+              <input type="range" min="0" max="127" value="${inst.volume}" class="form-range" onchange="setVolume('${name}', this.value)">
+              
+              <button class="btn btn-primary btn-sm mt-3 w-100" onclick="openPresetModal('${name}')">
+                Selecionar outro
+              </button>
+              
+              <!-- Arquivo em fonte pequena no rodapé -->
+              <div class="mt-3 pt-2 border-top">
+                <small class="text-muted d-block text-truncate" title="${inst.file}">📁 ${inst.file}</small>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        grid.appendChild(col);
+      }
+    }
+
     function openPresetModal(name) {
       currentInstrument = name;
 
-      // Atualiza o nome do instrumento no modal
       document.getElementById("presetInstrument").textContent = name;
 
       const currentPresetSpan = document.getElementById(`preset-name-${name}`);
@@ -89,7 +177,6 @@
             option.value = preset.preset;
             option.textContent = `${preset.preset} — ${preset.name}`;
 
-            // Se o preset atual for igual ao preset do loop → seleciona
             if (currentPreset && preset.name === currentPreset) {
               option.selected = true;
             }
@@ -102,7 +189,6 @@
           modal.show();
         });
     }
-
 
     function applyPreset() {
       const preset = document.getElementById("presetList").value;

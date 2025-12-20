@@ -18,12 +18,10 @@ class SynthModule:
         log(f"[synth] starting fluidsynth driver={driver} device={device}")
         self.fs = fluidsynth.Synth()
 
-        # apply fluidsynth settings from config
         fs_cfg = audio.get('fluidsynth', {})
         for key, value in fs_cfg.items():
             log(f"[fs.setting] {key} = {value}")
             try:
-                # try to cast ints/floats if possible, otherwise pass str
                 if isinstance(value, int):
                     self.fs.setting(key, int(value))
                 elif isinstance(value, float):
@@ -50,7 +48,6 @@ class SynthModule:
             traceback.print_exc()
 
         if not started:
-            # try fallbacks
             for fallback in ('pulseaudio', None):
                 try:
                     if fallback:
@@ -67,20 +64,46 @@ class SynthModule:
         if not started:
             raise RuntimeError('Could not start FluidSynth')
 
+        self.sfid_cache = {}
+        self.preset_cache = {}
         self.sfid_map = {}
         self.instruments = {}
-        self.load_instruments(cfg.data.get('instruments', []))
+        
+        log('[synth] pre-loading all soundfonts from all banks...')
+        self._preload_all_soundfonts()
+        self._activate_bank_instruments(cfg.get_active_instruments())
 
-    def reload(self, config_data):
-        """Recarrega instrumentos quando a configuração muda"""
-        log('[synth] reloading instruments...')
-        self.load_instruments(config_data.get('instruments', []))
-        log('[synth] instruments reloaded')
+    def _preload_all_soundfonts(self):
+        """Carrega todos os soundfonts de todos os bancos (cache)"""
+        banks = self.cfg.data.get('banks', [])
+        
+        for bank in banks:
+            instruments = bank.get('instruments', [])
+            for inst in instruments:
+                sf = inst['file']
 
-    def load_instruments(self, instruments):
-        self.sfid_map.clear()
+                if not os.path.isabs(sf):
+                    sf = os.path.join(inst.get('presets_dir', '.'), sf) if inst.get('presets_dir') else sf
+                if not os.path.exists(sf):
+                    if os.path.exists(os.path.join(os.getcwd(), sf)):
+                        sf = os.path.join(os.getcwd(), sf)
+                    else:
+                        log(f"[warn] soundfont {sf} not found, skipping")
+                        continue
+
+                if sf not in self.sfid_cache:
+                    log(f"[synth] loading soundfont: {sf}")
+                    sfid = self.fs.sfload(sf)
+                    self.sfid_cache[sf] = sfid
+                    self.preset_cache[sf] = self.read_presets_from_sf(sf)
+        
+        log(f'[synth] pre-loaded {len(self.sfid_cache)} soundfonts')
+
+    def _activate_bank_instruments(self, instruments):
+        """Ativa instrumentos do banco sem recarregar soundfonts"""
         self.instruments.clear()
-
+        self.sfid_map.clear()
+        
         for inst in instruments:
             name = inst['name']
             sf = inst['file']
@@ -88,28 +111,29 @@ class SynthModule:
             preset = inst.get('preset', 0)
             channel = inst.get('channel', 0)
             init_vol = int(inst.get('initial_volume', 100))
-
-            presets = self.read_presets_from_sf(sf)
+            
+            if not os.path.isabs(sf):
+                sf = os.path.join(inst.get('presets_dir', '.'), sf) if inst.get('presets_dir') else sf
+            if not os.path.exists(sf):
+                if os.path.exists(os.path.join(os.getcwd(), sf)):
+                    sf = os.path.join(os.getcwd(), sf)
+            
+            sfid = self.sfid_cache.get(sf)
+            if sfid is None:
+                log(f"[warn] soundfont {sf} not in cache, skipping {name}")
+                continue
+            
+            presets = self.preset_cache.get(sf, [])
             preset_name = next(
                 (p['name'] for p in presets if p['preset'] == preset and p['bank'] == bank),
                 "Desconhecido"
             )
-
-            if not os.path.isabs(sf):
-                sf = os.path.join(inst.get('presets_dir', '.'), sf) if inst.get('presets_dir') else sf
-
-            if not os.path.exists(sf):
-                if os.path.exists(os.path.join(os.getcwd(), sf)):
-                    sf = os.path.join(os.getcwd(), sf)
-                else:
-                    log(f"[warn] soundfont {sf} not found, skipping")
-                    continue
-
-            log(f"[synth] loading {name} -> {sf} (channel {channel})")
-            sfid = self.fs.sfload(sf)
+            
+            log(f"[synth] activating {name} on channel {channel}")
+            
             self.fs.program_select(channel, sfid, bank, preset)
             self.fs.cc(channel, 7, init_vol)
-
+            
             self.instruments[name] = {
                 'sf': sf,
                 'channel': channel,
@@ -119,17 +143,37 @@ class SynthModule:
                 'volume': init_vol,
                 'volume_cc': inst.get('volume_cc', 7),
                 'sfid': sfid,
-                'min_note': note_to_midi(inst.get('min_note', 0)),      # aceita C2, D#3, ou números
-                'max_note': note_to_midi(inst.get('max_note', 127)),    # padrão: todas as notas
+                'min_note': note_to_midi(inst.get('min_note', 0)),
+                'max_note': note_to_midi(inst.get('max_note', 127)),
             }
             self.sfid_map[name] = sfid
 
+    def reload(self, config_data):
+        """Recarrega instrumentos quando a configuração muda"""
+        log('[synth] reloading instruments...')
+        self._preload_all_soundfonts()
+        self._activate_bank_instruments(self.cfg.get_active_instruments())
+        log('[synth] instruments reloaded')
+
+    def switch_bank(self, bank_name):
+        """Troca para outro banco de instrumentos (instantâneo!)"""
+        if self.cfg.switch_bank(bank_name):
+            log(f'[synth] switching to bank: {bank_name}')
+            self._activate_bank_instruments(self.cfg.get_active_instruments())
+            log(f'[synth] bank switched: {bank_name}')
+            return True
+        else:
+            log(f'[synth] bank not found: {bank_name}')
+            return False
+
+    def load_instruments(self, instruments):
+        """Legacy method - redireciona para _activate_bank_instruments"""
+        self._activate_bank_instruments(instruments)
+
     def note_on(self, channel, note, vel):
         t0 = time.perf_counter()
-        # Toca apenas em instrumentos com volume > 0 e dentro do range de notas
         for inst in self.instruments.values():
-            if inst['volume'] > 0:  # skip instruments com volume = 0
-                # Filtrar por range de notas (min_note <= note <= max_note)
+            if inst['volume'] > 0:
                 if inst['min_note'] <= note <= inst['max_note']:
                     ch = inst['channel']
                     self.fs.noteon(ch, note, vel)
@@ -138,10 +182,8 @@ class SynthModule:
             log(f"[synth] NOTE ON ch={channel} note={note} vel={vel} sw-latency={(t1-t0)*1000:.3f} ms")
 
     def note_off(self, channel, note):
-        # Desliga apenas em instrumentos com volume > 0 e dentro do range
         for inst in self.instruments.values():
             if inst['volume'] > 0:
-                # Filtrar por range de notas
                 if inst['min_note'] <= note <= inst['max_note']:
                     ch = inst['channel']
                     self.fs.noteoff(ch, note)
@@ -183,11 +225,10 @@ class SynthModule:
                     bank = int(bank_s)
                     prog = int(prog_s)
                 except ValueError:
-                    # fallback: ignora entrada malformada
                     continue
                 presets.append({
                     "bank": bank,
-                    "preset": prog,   # programa (número do preset)
+                    "preset": prog,
                     "name": pname.strip()
                 })
         return presets

@@ -17,7 +17,39 @@ def create_app(synth):
             }
             for name, inst in synth.instruments.items()
         }
-        return render_template("index.html", instruments=instruments)
+
+        banks = synth.cfg.list_banks()
+        active_bank = synth.cfg.get_active_bank() or "(nenhum)"
+        
+        return render_template("index.html", 
+                             instruments=instruments,
+                             banks=banks,
+                             active_bank=active_bank)
+
+    @app.route('/banks')
+    def list_banks():
+        """Lista todos os banks disponíveis"""
+        return jsonify(synth.cfg.list_banks())
+
+    @app.route('/switch_bank', methods=['POST'])
+    def switch_bank():
+        """Troca o banco ativo"""
+        data = request.json or {}
+        bank_name = data.get('bank')
+        
+        if synth.switch_bank(bank_name):
+            instruments = {
+                name: {
+                    "file": inst["sf"],
+                    "channel": inst.get("channel", 0),
+                    "volume": inst.get("volume", 0),
+                    "preset_name": inst.get("preset_name", "None"),
+                }
+                for name, inst in synth.instruments.items()
+            }
+            return jsonify({"ok": True, "instruments": instruments})
+        else:
+            return jsonify({"ok": False, "error": "Bank not found"}), 404
 
     @app.route('/presets/<inst>')
     def list_presets(inst):
@@ -32,7 +64,7 @@ def create_app(synth):
 
         synth.set_preset(name, preset_number)
 
-        preset_list = synth.list_presets(name)   # agora retorna ints
+        preset_list = synth.list_presets(name)
         preset_entry = next((p for p in preset_list if p["preset"] == preset_number), None)
         preset_name = preset_entry["name"] if preset_entry else "Desconhecido"
 

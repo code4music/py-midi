@@ -77,6 +77,5 @@ class MidiBridge:
                         continue
                     data, delta = msg
                     self._handle_message(data, delta)
-                # Sem sleep - latência mínima! rtmidi.get_message() já é não-bloqueante
         except KeyboardInterrupt:
             log('[midi] stopped')

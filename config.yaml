@@ -1,5 +1,5 @@
 debug: true
-auto_reload: true
+auto_reload: false
 presets_dir: "sounds"
 
 audio:
@@ -17,56 +17,97 @@ audio:
 midi:
   input_port: "auto"
 
-instruments:
-  - name: "Piano"
-    file: "sounds/pianos/nord-stage-4.sf2"
-    channel: 0
-    bank: 0
-    preset: 3
-    volume_cc: 56
-    initial_volume: 127
-    min_note: "C0"
-    max_note: "C8"
+active_bank: "Live"
 
-  - name: "Pad"
-    file: "sounds/pads/analog.sf2"
-    channel: 1
-    bank: 0
-    preset: 0
-    volume_cc: 57
-    initial_volume: 0
-    min_note: "C2"
-    max_note: "B3"
+banks:
+  - name: "Live"
+    description: "Configuração para performance ao vivo"
+    instruments:
+      - name: "Piano"
+        file: "sounds/pianos/nord-stage-4.sf2"
+        channel: 0
+        bank: 0
+        preset: 3
+        volume_cc: 56
+        initial_volume: 127
+        min_note: "C0"
+        max_note: "C8"
 
-  - name: "Electric"
-    file: "sounds/electric-pianos/nord.sf2"
-    channel: 2
-    bank: 0
-    preset: 1
-    volume_cc: 58
-    initial_volume: 0
-    min_note: "C0"
-    max_note: "C8"
+      - name: "Pad"
+        file: "sounds/pads/analog.sf2"
+        channel: 1
+        bank: 0
+        preset: 0
+        volume_cc: 57
+        initial_volume: 0
+        min_note: "C2"
+        max_note: "B3"
 
-  - name: "Organ"
-    file: "sounds/organ/virtual.sf2"
-    channel: 3
-    bank: 100
-    preset: 40
-    volume_cc: 59
-    initial_volume: 0
-    min_note: "C0"
-    max_note: "C8"
+      - name: "Electric"
+        file: "sounds/electric-pianos/nord.sf2"
+        channel: 2
+        bank: 0
+        preset: 1
+        volume_cc: 58
+        initial_volume: 0
+        min_note: "C0"
+        max_note: "C8"
 
-  - name: "Organ 2"
-    file: "sounds/organ/organs.sf2"
-    channel: 4
-    bank: 2
-    preset: 17
-    volume_cc: 60
-    initial_volume: 0
-    min_note: "C0"
-    max_note: "C8"
+  - name: "Studio"
+    description: "Configuração para gravação"
+    instruments:
+      - name: "Piano"
+        file: "sounds/pianos/nord-stage-4.sf2"
+        channel: 0
+        bank: 0
+        preset: 3
+        volume_cc: 56
+        initial_volume: 127
+        min_note: "C0"
+        max_note: "C8"
+
+      - name: "Organ"
+        file: "sounds/organ/virtual.sf2"
+        channel: 1
+        bank: 100
+        preset: 40
+        volume_cc: 57
+        initial_volume: 50
+        min_note: "C1"
+        max_note: "C7"
+
+      - name: "Organ 2"
+        file: "sounds/organ/organs.sf2"
+        channel: 2
+        bank: 2
+        preset: 17
+        volume_cc: 58
+        initial_volume: 0
+        min_note: "C0"
+        max_note: "C8"
+
+  - name: "Ambient"
+    description: "Pads e texturas"
+    instruments:
+      - name: "Pad"
+        file: "sounds/pads/analog.sf2"
+        channel: 0
+        bank: 0
+        preset: 0
+        volume_cc: 56
+        initial_volume: 100
+        min_note: "C2"
+        max_note: "B5"
+
+      - name: "Electric"
+        file: "sounds/electric-pianos/nord.sf2"
+        channel: 1
+        bank: 0
+        preset: 1
+        volume_cc: 57
+        initial_volume: 80
+        min_note: "C2"
+        max_note: "C7"
 
 http:
   enabled: true
