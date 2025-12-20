@@ -25,6 +25,8 @@ instruments:
     preset: 3
     volume_cc: 56
     initial_volume: 127
+    min_note: "C0"
+    max_note: "C8"
 
   - name: "Pad"
     file: "sounds/pads/analog.sf2"
@@ -33,6 +35,8 @@ instruments:
     preset: 0
     volume_cc: 57
     initial_volume: 0
+    min_note: "C2"
+    max_note: "B3"
 
   - name: "Electric"
     file: "sounds/electric-pianos/nord.sf2"
@@ -41,6 +45,8 @@ instruments:
     preset: 1
     volume_cc: 58
     initial_volume: 0
+    min_note: "C0"
+    max_note: "C8"
 
   - name: "Organ"
     file: "sounds/organ/virtual.sf2"
@@ -49,6 +55,8 @@ instruments:
     preset: 40
     volume_cc: 59
     initial_volume: 0
+    min_note: "C0"
+    max_note: "C8"
 
   - name: "Organ 2"
     file: "sounds/organ/organs.sf2"
@@ -57,6 +65,8 @@ instruments:
     preset: 17
     volume_cc: 60
     initial_volume: 0
+    min_note: "C0"
+    max_note: "C8"
 
 http:
   enabled: true

@@ -5,6 +5,7 @@ import traceback
 import fluidsynth
 from sf2utils.sf2parse import Sf2File
 from .utils import log
+from .utils import note_to_midi
 
 
 class SynthModule:
@@ -118,26 +119,32 @@ class SynthModule:
                 'volume': init_vol,
                 'volume_cc': inst.get('volume_cc', 7),
                 'sfid': sfid,
+                'min_note': note_to_midi(inst.get('min_note', 0)),      # aceita C2, D#3, ou números
+                'max_note': note_to_midi(inst.get('max_note', 127)),    # padrão: todas as notas
             }
             self.sfid_map[name] = sfid
 
     def note_on(self, channel, note, vel):
         t0 = time.perf_counter()
-        # Toca apenas em instrumentos com volume > 0 (layering inteligente)
+        # Toca apenas em instrumentos com volume > 0 e dentro do range de notas
         for inst in self.instruments.values():
             if inst['volume'] > 0:  # skip instruments com volume = 0
-                ch = inst['channel']
-                self.fs.noteon(ch, note, vel)
+                # Filtrar por range de notas (min_note <= note <= max_note)
+                if inst['min_note'] <= note <= inst['max_note']:
+                    ch = inst['channel']
+                    self.fs.noteon(ch, note, vel)
         t1 = time.perf_counter()
         if self.cfg.debug:
             log(f"[synth] NOTE ON ch={channel} note={note} vel={vel} sw-latency={(t1-t0)*1000:.3f} ms")
 
     def note_off(self, channel, note):
-        # Desliga apenas em instrumentos com volume > 0
+        # Desliga apenas em instrumentos com volume > 0 e dentro do range
         for inst in self.instruments.values():
             if inst['volume'] > 0:
-                ch = inst['channel']
-                self.fs.noteoff(ch, note)
+                # Filtrar por range de notas
+                if inst['min_note'] <= note <= inst['max_note']:
+                    ch = inst['channel']
+                    self.fs.noteoff(ch, note)
 
     def send_cc(self, channel, ccnum, value):
         self.fs.cc(channel, ccnum, value)
