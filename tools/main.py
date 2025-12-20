@@ -68,7 +68,6 @@ class SynthModule:
         self.fs = fluidsynth.Synth()
 
         FS_FLOAT_PARAMS = {
-            "synth.sample-rate",
             "synth.gain",
             "synth.overflow-percentage",
         }

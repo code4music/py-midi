@@ -1,17 +1,21 @@
-debug: false
+debug: true
+auto_reload: true
+presets_dir: "sounds"
 
 audio:
-  driver: pulseaudio           # alsa | jack
-  # device: "default"      # ex "hw:1" para sua interface USB
+  driver: "alsa" # alsa | jack | pulseaudio
+  device: "default"
 
   fluidsynth:
-    audio.period-size: 64
-    audio.periods: 2
-    synth.sample-rate: 44100.0
+    audio.alsa.device: "default"
+    audio.period-size: 128
+    audio.periods: 3
     synth.cpu-cores: 2
+    synth.polyphony: 128
+    synth.gain: 0.8
 
 midi:
-  input_port: auto          # porta MIDI (rtmidi index) ou "auto"
+  input_port: "auto"
 
 instruments:
   - name: "Piano"
@@ -54,8 +58,6 @@ instruments:
     volume_cc: 60
     initial_volume: 0
 
-presets_dir: "sounds"
-reload_on_change: true   # se true, monitora config.yaml e recarrega
 http:
   enabled: true
   host: "0.0.0.0"

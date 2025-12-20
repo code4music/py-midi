@@ -9,11 +9,14 @@ from watchdog.events import FileSystemEventHandler
 
 
 def reload_configs(cfg, synth, midi):
-    cfg.load()
-    synth.reload(cfg.data)
-    midi.cc_map = cfg.midi_map.get('cc', {})
-    midi.actions = cfg.midi_map.get('actions', {})
-    log('[reload] configs reloaded')
+    try:
+        cfg.load()
+        synth.reload(cfg.data)
+        midi.cc_map = cfg.midi_map.get('cc', {})
+        midi.actions = cfg.midi_map.get('actions', {})
+        log('[reload] configs reloaded')
+    except Exception as e:
+        log(f'[reload] error: {e}')
 
 
 class ConfigWatcher(FileSystemEventHandler):
@@ -32,7 +35,7 @@ def run():
     synth = SynthModule(cfg)
     midi = MidiBridge(cfg, synth)
 
-    if cfg.data.get('reload_on_change', True):
+    if cfg.data.get('auto_reload', True):
         watcher = ConfigWatcher(lambda: reload_configs(cfg, synth, midi))
         obs = Observer()
         obs.schedule(watcher, '.', recursive=False)

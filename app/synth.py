@@ -70,6 +70,12 @@ class SynthModule:
         self.instruments = {}
         self.load_instruments(cfg.data.get('instruments', []))
 
+    def reload(self, config_data):
+        """Recarrega instrumentos quando a configuração muda"""
+        log('[synth] reloading instruments...')
+        self.load_instruments(config_data.get('instruments', []))
+        log('[synth] instruments reloaded')
+
     def load_instruments(self, instruments):
         self.sfid_map.clear()
         self.instruments.clear()
@@ -117,16 +123,21 @@ class SynthModule:
 
     def note_on(self, channel, note, vel):
         t0 = time.perf_counter()
+        # Toca apenas em instrumentos com volume > 0 (layering inteligente)
         for inst in self.instruments.values():
-            ch = inst['channel']
-            self.fs.noteon(ch, note, vel)
+            if inst['volume'] > 0:  # skip instruments com volume = 0
+                ch = inst['channel']
+                self.fs.noteon(ch, note, vel)
         t1 = time.perf_counter()
-        log(f"[synth] NOTE ON ch={channel} note={note} vel={vel} sw-latency={(t1-t0)*1000:.3f} ms")
+        if self.cfg.debug:
+            log(f"[synth] NOTE ON ch={channel} note={note} vel={vel} sw-latency={(t1-t0)*1000:.3f} ms")
 
     def note_off(self, channel, note):
+        # Desliga apenas em instrumentos com volume > 0
         for inst in self.instruments.values():
-            ch = inst['channel']
-            self.fs.noteoff(ch, note)
+            if inst['volume'] > 0:
+                ch = inst['channel']
+                self.fs.noteoff(ch, note)
 
     def send_cc(self, channel, ccnum, value):
         self.fs.cc(channel, ccnum, value)

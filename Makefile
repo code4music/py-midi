@@ -19,6 +19,10 @@ install: venv
 run:
 	$(PYTHON) -m app.main
 
+.PHONY: run-realtime
+run-realtime:
+	nice -n -19 $(PYTHON) -m app.main
+
 .PHONY: lint
 lint:
 	$(PYTHON) -m flake8 $(APP)
