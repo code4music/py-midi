@@ -198,6 +198,15 @@ class SynthModule:
         self.fs.cc(ch, 7, int(value))
         self.instruments[name]['volume'] = int(value)
 
+    def panic(self):
+        """Para TODOS os sons imediatamente (All Notes Off + All Sound Off)"""
+        log('[synth] PANIC! Stopping all sounds...')
+        # Enviar All Notes Off (CC 123) e All Sound Off (CC 120) em todos os canais
+        for channel in range(16):  # MIDI tem 16 canais (0-15)
+            self.fs.cc(channel, 123, 0)  # All Notes Off
+            self.fs.cc(channel, 120, 0)  # All Sound Off
+        log('[synth] All sounds stopped')
+
     def get_instruments_status(self):
         out = {}
         for n, v in self.instruments.items():

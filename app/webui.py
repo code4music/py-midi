@@ -51,6 +51,12 @@ def create_app(synth):
         else:
             return jsonify({"ok": False, "error": "Bank not found"}), 404
 
+    @app.route('/panic', methods=['POST'])
+    def panic():
+        """Para todos os sons imediatamente"""
+        synth.panic()
+        return jsonify({"ok": True})
+
     @app.route('/presets/<inst>')
     def list_presets(inst):
         return jsonify(synth.list_presets(inst))
