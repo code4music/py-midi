@@ -1,5 +1,4 @@
 from flask import Flask, jsonify, request, render_template
-from .utils import log
 
 
 def create_app(synth):
@@ -67,18 +66,18 @@ def create_app(synth):
         payload = request.json or {}
         name = payload.get("instrument")
         preset_number = int(payload.get("preset", 0))
-
         synth.set_preset(name, preset_number)
-
-        preset_list = synth.list_presets(name)
-        preset_entry = next((p for p in preset_list if p["preset"] == preset_number), None)
-        preset_name = preset_entry["name"] if preset_entry else "Desconhecido"
-
         inst = synth.instruments.get(name)
         if inst:
+            file_path = inst['sf']
+            preset_list = synth.preset_cache.get(file_path, [])
+            preset_entry = next((p for p in preset_list if p["preset"] == preset_number), None)
+            preset_name = preset_entry["name"] if preset_entry else "Desconhecido"
+            
             inst["preset"] = preset_number
             inst["preset_name"] = preset_name
-
+        else:
+            preset_name = "Desconhecido"
         return jsonify({
             "ok": True,
             "preset_name": preset_name

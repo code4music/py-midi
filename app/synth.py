@@ -202,10 +202,9 @@ class SynthModule:
     def panic(self):
         """Para TODOS os sons imediatamente (All Notes Off + All Sound Off)"""
         log('[synth] PANIC! Stopping all sounds...')
-        # Enviar All Notes Off (CC 123) e All Sound Off (CC 120) em todos os canais
-        for channel in range(16):  # MIDI tem 16 canais (0-15)
-            self.fs.cc(channel, 123, 0)  # All Notes Off
-            self.fs.cc(channel, 120, 0)  # All Sound Off
+        for channel in range(16):
+            self.fs.cc(channel, 123, 0)
+            self.fs.cc(channel, 120, 0)
         log('[synth] All sounds stopped')
 
     def get_instruments_status(self):
@@ -218,29 +217,16 @@ class SynthModule:
         """Retorna lista de presets do SF2 como dicts com bank:int, preset:int, name:str"""
         if name not in self.instruments:
             return []
+
         file_path = self.instruments[name]['sf']
+        if file_path in self.preset_cache:
+            return self.preset_cache[file_path]
+
         if not os.path.exists(file_path):
             return []
 
-        presets = []
-        with open(file_path, 'rb') as f:
-            sf2 = Sf2File(f)
-            for preset in sf2.presets:
-                s = str(preset)
-                m = re.match(r"Preset\[(\d+):(\d+)\]\s*(.*?)\s*(?:\d+ bag\(s\).*)?$", s)
-                if not m:
-                    continue
-                bank_s, prog_s, pname = m.groups()
-                try:
-                    bank = int(bank_s)
-                    prog = int(prog_s)
-                except ValueError:
-                    continue
-                presets.append({
-                    "bank": bank,
-                    "preset": prog,
-                    "name": pname.strip()
-                })
+        presets = self.read_presets_from_sf(file_path)
+        self.preset_cache[file_path] = presets
         return presets
 
     def set_preset(self, name, preset_number):

@@ -193,8 +193,15 @@
 
     function openPresetModal(name) {
       currentInstrument = name;
-
       document.getElementById("presetInstrument").textContent = name;
+
+      const modalElement = document.getElementById("presetModal");
+      const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+      modal.show();
+
+      const select = document.getElementById("presetList");
+      select.innerHTML = '<option>⏳ Carregando...</option>';
+      select.disabled = true;
 
       const currentPresetSpan = document.getElementById(`preset-name-${name}`);
       const currentPreset = currentPresetSpan ? currentPresetSpan.textContent.trim() : null;
@@ -202,8 +209,8 @@
       fetch(`/presets/${encodeURIComponent(name)}`)
         .then(response => response.json())
         .then(presets => {
-          const select = document.getElementById("presetList");
           select.innerHTML = "";
+          select.disabled = false;
 
           presets.forEach(preset => {
             const option = document.createElement("option");
@@ -216,15 +223,20 @@
 
             select.appendChild(option);
           });
-
-          const modalElement = document.getElementById("presetModal");
-          const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-          modal.show();
+        })
+        .catch(err => {
+          select.innerHTML = '<option>❌ Erro ao carregar</option>';
+          console.error('Erro ao carregar presets:', err);
         });
     }
 
     function applyPreset() {
       const preset = document.getElementById("presetList").value;
+      const btn = event.target;
+      const originalText = btn.textContent;
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Aplicando...';
 
       fetch('/set_preset', {
         method: 'POST',
@@ -237,9 +249,22 @@
       .then(r => r.json())
       .then(data => {
         document.getElementById("preset-name-" + currentInstrument).textContent = data.preset_name;
+        btn.textContent = '✅ Aplicado!';
+        
+        setTimeout(() => {
+          bootstrap.Modal.getInstance(document.getElementById('presetModal')).hide();
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }, 300);
+      })
+      .catch(err => {
+        btn.textContent = '❌ Erro';
+        console.error('Erro ao aplicar preset:', err);
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }, 1500);
       });
-
-      bootstrap.Modal.getInstance(document.getElementById('presetModal')).hide();
     }
 
     function setVolume(name, value) {
