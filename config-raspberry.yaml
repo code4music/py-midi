@@ -66,17 +66,6 @@ banks:
         min_note: "C2"
         max_note: "B4"
 
-      - name: "Electric"
-        file: "sounds/electric-pianos/nord.sf2"
-        channel: 2
-        bank: 0
-        preset: 1
-        volume_cc: 3
-        initial_volume: 0
-        use_sustain: true
-        min_note: "C0"
-        max_note: "C8"
-
   - name: "Studio"
     description: "Configuração para gravação"
     instruments:
@@ -126,17 +115,6 @@ banks:
         use_sustain: true
         min_note: "C2"
         max_note: "B5"
-
-      - name: "Electric"
-        file: "sounds/electric-pianos/nord.sf2"
-        channel: 1
-        bank: 0
-        preset: 1
-        volume_cc: 0
-        initial_volume: 2
-        use_sustain: true
-        min_note: "C0"
-        max_note: "C8"
 
 http:
   enabled: true
