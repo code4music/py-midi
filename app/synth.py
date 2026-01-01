@@ -1,9 +1,7 @@
 import os
-import re
 import time
 import traceback
 import fluidsynth
-from sf2utils.sf2parse import Sf2File
 from .utils import log
 from .utils import note_to_midi
 
@@ -258,17 +256,36 @@ class SynthModule:
         self.fs.program_select(ch, inst["sfid"], bank, preset_number)
 
     def read_presets_from_sf(self, sf_path):
+        """Lê presets de um arquivo SF2 usando API do FluidSynth."""
         presets = []
-        with open(sf_path, 'rb') as f:
-            sf2 = Sf2File(f)
-            for preset in sf2.presets:
-                s = str(preset)
-                m = re.match(r"Preset\[(\d+):(\d+)\]\s*(.*?)\s*(?:\d+ bag\(s\).*)?$", s)
-                if m:
-                    bank, prog, pname = m.groups()
-                    presets.append({
-                        'bank': int(bank),
-                        'preset': int(prog),
-                        'name': pname.strip()
-                    })
+        
+        # Usa o sfid já carregado ou carrega temporariamente
+        if sf_path in self.sfid_cache:
+            sfid = self.sfid_cache[sf_path]
+        else:
+            if not os.path.exists(sf_path):
+                return presets
+            try:
+                sfid = self.fs.sfload(sf_path)
+            except Exception as e:
+                log(f"[warn] Erro ao carregar {sf_path}: {e}")
+                return presets
+
+        try:
+            for bank in range(128):
+                for prog in range(128):
+                    try:
+                        preset_name = self.fs.sfpreset_name(sfid, bank, prog)
+                        if preset_name:
+                            presets.append({
+                                'bank': bank,
+                                'preset': prog,
+                                'name': preset_name
+                            })
+                    except:
+                        # Preset não existe ou método não disponível
+                        pass
+        except Exception as e:
+            log(f"[warn] Erro ao listar presets de {sf_path}: {e}")
+        
         return presets
