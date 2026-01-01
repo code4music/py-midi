@@ -1,6 +1,7 @@
 debug: true
 auto_reload: false
 presets_dir: "sounds"
+midi_learn_mode: true
 
 audio:
   driver: "alsa" # alsa | jack | pulseaudio
@@ -16,9 +17,29 @@ audio:
 
 midi:
   input_port: "auto"
+  
+  cc_map:
+    64: "sustain"
+    11: "expression"
+
+  actions:
+    reload_config:
+      cc: 114
+      value: 127
+
+    next_bank:
+      cc: 112
+      value: 127
+
+    prev_bank:
+      cc: 111
+      value: 127
+
+    panic:
+      cc: 118
+      value: 127
 
 active_bank: "Live"
-
 banks:
   - name: "Live"
     description: "Configuração para performance ao vivo"
@@ -28,8 +49,9 @@ banks:
         channel: 0
         bank: 0
         preset: 3
-        volume_cc: 56
+        volume_cc: 1
         initial_volume: 127
+        use_sustain: true
         min_note: "C0"
         max_note: "C8"
 
@@ -38,18 +60,20 @@ banks:
         channel: 1
         bank: 0
         preset: 0
-        volume_cc: 57
+        volume_cc: 2
         initial_volume: 0
+        use_sustain: true
         min_note: "C2"
-        max_note: "B3"
+        max_note: "B4"
 
       - name: "Electric"
         file: "sounds/electric-pianos/nord.sf2"
         channel: 2
         bank: 0
         preset: 1
-        volume_cc: 58
+        volume_cc: 3
         initial_volume: 0
+        use_sustain: true
         min_note: "C0"
         max_note: "C8"
 
@@ -61,8 +85,9 @@ banks:
         channel: 0
         bank: 0
         preset: 3
-        volume_cc: 56
+        volume_cc: 1
         initial_volume: 127
+        use_sustain: true
         min_note: "C0"
         max_note: "C8"
 
@@ -71,8 +96,9 @@ banks:
         channel: 1
         bank: 100
         preset: 40
-        volume_cc: 57
-        initial_volume: 50
+        volume_cc: 2
+        initial_volume: 0
+        use_sustain: false
         min_note: "C1"
         max_note: "C7"
 
@@ -81,8 +107,9 @@ banks:
         channel: 2
         bank: 2
         preset: 17
-        volume_cc: 58
+        volume_cc: 3
         initial_volume: 0
+        use_sustain: false
         min_note: "C0"
         max_note: "C8"
 
@@ -94,8 +121,9 @@ banks:
         channel: 0
         bank: 0
         preset: 0
-        volume_cc: 56
-        initial_volume: 100
+        volume_cc: 1
+        initial_volume: 127
+        use_sustain: true
         min_note: "C2"
         max_note: "B5"
 
@@ -104,10 +132,11 @@ banks:
         channel: 1
         bank: 0
         preset: 1
-        volume_cc: 57
-        initial_volume: 80
-        min_note: "C2"
-        max_note: "C7"
+        volume_cc: 0
+        initial_volume: 2
+        use_sustain: true
+        min_note: "C0"
+        max_note: "C8"
 
 http:
   enabled: true
