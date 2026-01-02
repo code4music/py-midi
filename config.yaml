@@ -45,7 +45,7 @@ banks:
     description: "Configuração para performance ao vivo"
     instruments:
       - name: "Piano"
-        file: "sounds/pianos/nord-stage-4.sf2"
+        file: "sounds/pianos/upright-piano.sf2"
         channel: 0
         bank: 0
         preset: 3
@@ -67,7 +67,7 @@ banks:
         max_note: "B4"
 
       - name: "Electric"
-        file: "sounds/electric-pianos/nord.sf2"
+        file: "sounds/pianos/kawai-grand-piano.sf2"
         channel: 2
         bank: 0
         preset: 1
@@ -81,7 +81,7 @@ banks:
     description: "Configuração para gravação"
     instruments:
       - name: "Piano"
-        file: "sounds/pianos/nord-stage-4.sf2"
+        file: "sounds/pianos/upright-piano.sf2"
         channel: 0
         bank: 0
         preset: 3
@@ -128,7 +128,7 @@ banks:
         max_note: "B5"
 
       - name: "Electric"
-        file: "sounds/electric-pianos/nord.sf2"
+        file: "sounds/pianos/kawai-grand-piano.sf2"
         channel: 1
         bank: 0
         preset: 1
