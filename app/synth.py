@@ -1,5 +1,4 @@
 import os
-import time
 import traceback
 import fluidsynth
 from .utils import log
@@ -98,10 +97,11 @@ class SynthModule:
         log(f'[synth] pre-loaded {len(self.sfid_cache)} soundfonts')
 
     def _activate_bank_instruments(self, instruments):
-        """Ativa instrumentos do banco sem recarregar soundfonts"""
-        self.instruments.clear()
-        self.sfid_map.clear()
-        
+        """Ativa instrumentos do banco sem recarregar soundfonts.
+        Usa swap atômico do dict para thread safety com callbacks MIDI."""
+        new_instruments = {}
+        new_sfid_map = {}
+
         for inst in instruments:
             name = inst['name']
             sf = inst['file']
@@ -109,30 +109,30 @@ class SynthModule:
             preset = inst.get('preset', 0)
             channel = inst.get('channel', 0)
             init_vol = int(inst.get('initial_volume', 100))
-            
+
             if not os.path.isabs(sf):
                 sf = os.path.join(inst.get('presets_dir', '.'), sf) if inst.get('presets_dir') else sf
             if not os.path.exists(sf):
                 if os.path.exists(os.path.join(os.getcwd(), sf)):
                     sf = os.path.join(os.getcwd(), sf)
-            
+
             sfid = self.sfid_cache.get(sf)
             if sfid is None:
                 log(f"[warn] soundfont {sf} not in cache, skipping {name}")
                 continue
-            
+
             presets = self.preset_cache.get(sf, [])
             preset_name = next(
                 (p['name'] for p in presets if p['preset'] == preset and p['bank'] == bank),
                 "Desconhecido"
             )
-            
+
             log(f"[synth] activating {name} on channel {channel}")
-            
+
             self.fs.program_select(channel, sfid, bank, preset)
             self.fs.cc(channel, 7, init_vol)
-            
-            self.instruments[name] = {
+
+            new_instruments[name] = {
                 'sf': sf,
                 'channel': channel,
                 'bank': bank,
@@ -145,7 +145,11 @@ class SynthModule:
                 'min_note': note_to_midi(inst.get('min_note', 0)),
                 'max_note': note_to_midi(inst.get('max_note', 127)),
             }
-            self.sfid_map[name] = sfid
+            new_sfid_map[name] = sfid
+
+        # Swap atômico — seguro para leitores concorrentes (callback MIDI)
+        self.instruments = new_instruments
+        self.sfid_map = new_sfid_map
 
     def reload(self, config_data):
         """Recarrega instrumentos quando a configuração muda"""
@@ -188,22 +192,16 @@ class SynthModule:
         self._activate_bank_instruments(instruments)
 
     def note_on(self, channel, note, vel):
-        t0 = time.perf_counter()
         for inst in self.instruments.values():
             if inst['volume'] > 0:
                 if inst['min_note'] <= note <= inst['max_note']:
-                    ch = inst['channel']
-                    self.fs.noteon(ch, note, vel)
-        t1 = time.perf_counter()
-        if self.cfg.debug:
-            log(f"[synth] NOTE ON ch={channel} note={note} vel={vel} sw-latency={(t1-t0)*1000:.3f} ms")
+                    self.fs.noteon(inst['channel'], note, vel)
 
     def note_off(self, channel, note):
         for inst in self.instruments.values():
             if inst['volume'] > 0:
                 if inst['min_note'] <= note <= inst['max_note']:
-                    ch = inst['channel']
-                    self.fs.noteoff(ch, note)
+                    self.fs.noteoff(inst['channel'], note)
 
     def send_cc(self, channel, ccnum, value):
         self.fs.cc(channel, ccnum, value)

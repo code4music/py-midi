@@ -9,11 +9,13 @@ audio:
 
   fluidsynth:
     audio.alsa.device: "default"
-    audio.period-size: 128
-    audio.periods: 3
-    synth.cpu-cores: 2
-    synth.polyphony: 128
+    audio.period-size: 256
+    audio.periods: 4
+    synth.cpu-cores: 4
+    synth.polyphony: 64
     synth.gain: 0.8
+    synth.chorus.active: 0
+    synth.reverb.active: 0
 
 midi:
   input_port: "auto"

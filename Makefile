@@ -23,6 +23,10 @@ run:
 run-realtime:
 	nice -n -19 $(PYTHON) -m app.main
 
+.PHONY: run-production
+run-production:
+	sudo chrt -f 50 $(PYTHON) -m app.main
+
 .PHONY: lint
 lint:
 	$(PYTHON) -m flake8 $(APP)
